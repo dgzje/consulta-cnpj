@@ -1,0 +1,181 @@
+Sub PreencherCNPJ()
+    Dim url As String
+    Dim varCNPJ As String
+    
+fim_cnpj = Sheets("Tabela de CNPJS").Range("A100000").End(xlUp).Row
+    
+For n = 2 To fim_cnpj
+    
+    If Range("A" & n) <> "" Then
+        varCNPJ = onlyDigits(Range("A" & n))
+        url = "https://www.receitaws.com.br/v1/cnpj/" & varCNPJ
+        Set Myrequest = CreateObject("WinHttp.WinHttpRequest.5.1")
+        Myrequest.SetTimeouts 500000, 500000, 10000, 10000
+        Myrequest.Open "GET", url, False
+        Call Myrequest.send
+             
+        ' NOVAS TENTATIVAS
+        Myrequest.Status
+            
+        Dim Json As Object
+        Set Json = JsonConverter.ParseJson(Myrequest.ResponseText)
+        
+        Range("B" & n) = Json("nome")
+        Range("C" & n) = Json("fantasia")
+        Range("D" & n) = Json("logradouro")
+        Range("E" & n) = Json("numero")
+        Range("F" & n) = Json("complemento")
+        Range("G" & n) = Json("bairro")
+        Range("H" & n) = Json("municipio")
+        Range("I" & n) = Json("uf")
+        Range("J" & n) = Json("cep")
+        Range("K" & n) = Json("telefone")
+        Range("L" & n) = Json("email")
+        Range("M" & n) = Json("natureza_juridica")
+        Range("N" & n) = Json("ultima_atualizacao")
+        Range("O" & n) = Json("efr")
+            
+    End If
+
+Next n
+       
+End Sub
+
+
+Sub liteFetch()
+    
+    Dim url As String
+    Dim varCNPJ As String
+    
+
+    
+    varCNPJ = onlyDigits(Range("A3"))
+    
+    
+    url = "https://www.receitaws.com.br/v1/cnpj/" & varCNPJ
+    
+    Set Myrequest = CreateObject("WinHttp.WinHttpRequest.5.1")
+    
+    ' Resolve, Connect, Send and Receive
+    Myrequest.SetTimeouts 5000, 5000, 1000, 1000
+    
+    ' open(http method GET/POST, absolute uri to request, async (true: async, false: sync)
+    Myrequest.Open "GET", url, False
+    
+    Call Myrequest.send
+     
+    
+    ' NOVAS TENTATIVAS
+    Myrequest.Status
+    
+
+    
+    
+'    MsgBox MyRequest.ResponseText
+    
+    Dim Json As Object
+    Set Json = JsonConverter.ParseJson(Myrequest.ResponseText)
+    
+    Range("rngDados").Clear
+
+'    MsgBox Json("atividades_secundarias")(2)("text")
+'    MsgBox Json("capital_social")
+    
+    Range("data_situacao").Value = Json("data_situacao")
+    Range("complemento").Value = Json("complemento")
+    Range("nome").Value = Json("nome")
+    Range("uf").Value = Json("uf")
+    Range("telefone").Value = Json("telefone")
+    Range("email").Value = Json("email")
+    Range("situacao").Value = Json("situacao")
+    Range("bairro").Value = Json("bairro")
+    Range("logradouro").Value = Json("logradouro")
+    Range("numero").Value = Json("numero")
+    Range("cep").Value = Json("cep")
+    Range("municipio").Value = Json("municipio")
+    Range("abertura").Value = Json("abertura")
+    Range("natureza_juridica").Value = Json("natureza_juridica")
+    Range("fantasia").Value = Json("fantasia")
+    Range("cnpj").Value = Json("cnpj")
+    Range("ultima_atualizacao").Value = Json("ultima_atualizacao")
+    Range("status").Value = Json("status")
+    Range("tipo").Value = Json("tipo")
+    Range("efr").Value = Json("efr")
+    Range("motivo_situacao").Value = Json("motivo_situacao")
+    Range("situacao_especial").Value = Json("situacao_especial")
+    Range("data_situacao_especial").Value = Json("data_situacao_especial")
+    Range("capital_social").Value = Json("capital_social")
+
+        Dim atividades_secundarias, qsa, atividade_principal As Dictionary
+
+        On Error Resume Next
+        For Each Lista In Json("atividades_secundarias")
+    '        Debug.Print Lista("text")
+    '        Debug.Print Lista("code")
+    '
+            Range("atividades_secundarias_text").Value = Range("atividades_secundarias_text").Value & Lista("text") & " | "
+            Range("atividades_secundarias_code").Value = Range("atividades_secundarias_code").Value & Lista("code") & " | "
+        Next
+         
+        On Error Resume Next
+        For Each Lista In Json("qsa")
+'
+            Range("qsa_nome").Value = Range("qsa_nome").Value & Lista("nome") & " | "
+            Range("qsa_qual").Value = Range("qsa_qual").Value & Lista("qual") & " | "
+        Next
+        
+        On Error Resume Next
+        For Each Lista In Json("atividade_principal")
+'
+            Range("atividade_principal_text").Value = Range("atividade_principal_text").Value & Lista("text") & " | "
+            Range("atividade_principal_code").Value = Range("atividade_principal_code").Value & Lista("code") & " | "
+        Next
+
+        Set Myrequest = Nothing
+        
+        
+        Sheets("Resultados Consultas").Range("6:7,16:20,22:23").EntireRow.AutoFit
+
+        Exit Sub
+       
+End Sub
+
+
+
+
+Function onlyDigits(s As String) As String
+    
+    ' FUNCAO PARA TRATAR NUMEROS DO CNPJ
+    
+    ' Variables needed (remember to use "option explicit").   '
+    Dim retval As String    ' This is the return string.      '
+    Dim i As Integer        ' Counter for character position. '
+
+    ' Initialise return string to empty                       '
+    retval = ""
+
+    ' For every character in input string, copy digits to     '
+    '   return string.                                        '
+    For i = 1 To Len(s)
+        If Mid(s, i, 1) >= "0" And Mid(s, i, 1) <= "9" Then
+            retval = retval + Mid(s, i, 1)
+        End If
+    Next
+
+    ' Then return the return string.                          '
+    onlyDigits = retval
+    
+    
+'    Calling this with:
+'
+'Dim myStr As String
+'myStr = onlyDigits("3d1fgd4g1dg5d9gdg")
+'MsgBox (myStr)
+'
+'will give you a dialog box containing:
+'
+'314159
+    
+    
+    
+End Function
